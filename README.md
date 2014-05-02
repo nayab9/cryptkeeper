@@ -13,3 +13,8 @@ Where -n is the number of threads and -k is the keyfile.
 Example usage:
 
 cat data.txt | cryptkeeper -n 2 -k keyfile.txt > cryptofied
+
+
+Compile Instructions:
+
+>> gcc cryptkeeper.c -o cryptkeeper
