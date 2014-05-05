@@ -17,8 +17,16 @@ void *encrypt(void *thread_ptr)
     
     //printf("This is my passed thread id: %x\n", data->thread_id);
     //printf("This is my passed data value: %x\n", data->data_value);
-    ////printf("This is my passed key value: %x\n", data->key_value);
-    data->encrypted_value = data->key_value ^ data->data_value;
+    //printf("This is my passed key value: %x\n", data->key_value);
+    if ( data->key_value != data->data_value )
+    {
+        data->encrypted_value = data->key_value ^ data->data_value;
+    }
+    else
+    {
+        //printf("Does it hit this ******************\n");
+        data->encrypted_value = data->data_value;
+    }
     //printf("This is the new encrypted value: %x\n", data->encrypted_value);
     
     return (void * ) data;
@@ -31,7 +39,7 @@ int main(int argc, char *argv[])
     
     sscanf (argv[1], "%d", &num_threads);
     
-    pthread_t threads[num_threads];
+    
     
     //read from the key file specified
  
@@ -71,6 +79,11 @@ int main(int argc, char *argv[])
     //printf("blocksize is: %d\n", blocksize);
     char text[blocksize];
     
+    if (num_threads > blocksize)
+    {
+        num_threads = blocksize;
+    }
+    
     char* plaintext = text;
     char *buff2 = plaintext;
     int i, j;
@@ -81,6 +94,7 @@ int main(int argc, char *argv[])
     //printf("The initial read was: %d\n", result);
     
     block encrypt_go[blocksize];
+    pthread_t threads[num_threads];
     
     //so long as enough blocksize bytes are available, continue looping
 	//no threading will be used if they don't want it (i.e. threads > 2)
@@ -104,12 +118,12 @@ int main(int argc, char *argv[])
                 int index = i % num_threads;
                 int temp_i = i;
                 
-		if (temp_i < result)
-		{
-                	encrypt_go[temp_i].thread_id = temp_i;
-                	encrypt_go[temp_i].data_value = text[temp_i];
-                	encrypt_go[temp_i].key_value = buff[temp_i];
-		}
+        		if (temp_i < result)
+        		{
+                        	encrypt_go[temp_i].thread_id = temp_i;
+                        	encrypt_go[temp_i].data_value = text[temp_i];
+                        	encrypt_go[temp_i].key_value = buff[temp_i];
+        		}
  
                 //printf("the thread value i am now going to pass is: %x\n", encrypt_go[index].thread_id);
                 //printf("the data value i am now going to pass is: %x\n", encrypt_go[index].data_value);
@@ -120,7 +134,8 @@ int main(int argc, char *argv[])
                 
                 //whats needed here is the wrap up processing if i > num_threads
                 if ((temp_i >= num_threads && index == 0) ||
-                     blocksize == num_threads && num_threads == temp_i)) //|| temp_i == result && result )
+                     blocksize == num_threads && num_threads == temp_i )
+                     //|| temp_i == result && result )
                 {
                     //printf("I should wrap it up right MEOW!\n") ;   
                     //this will seg fault if num_threads is less than blocksize
@@ -140,29 +155,28 @@ int main(int argc, char *argv[])
                             int encrypted_value = (int) return_block->encrypted_value;
                             int returned_thread = (int) return_block->thread_id;
                             
-                            //printf("This is the thread id return value of the thread #%d: %x\n", j, (int) return_block->thread_id);
-                            //printf("This is the data value return value of the thread #%d: %x\n", j, (int) return_block->data_value);
-                            //printf("This is the key value return value of the thread #%d: %x\n", j, (int) return_block->key_value);
+                            //printf("This is the thread id return value of the thread       #%d: %x\n", j, (int) return_block->thread_id);
+                            //printf("This is the data value return value of the thread      #%d: %x\n", j, (int) return_block->data_value);
+                            //printf("This is the key value return value of the thread       #%d: %x\n", j, (int) return_block->key_value);
                             //printf("This is the encrypted value return value of the thread #%d: %x\n", j, (int) return_block->encrypted_value);
                             text[returned_thread] = encrypted_value;
+                            //printf("%x", text[returned_thread]);
                         }
                     }
                    
-		
-
-			if (temp_i < result)
-			{ 
-				//printf("I'm still not done the block, I'm creating a new thread overlapping at index: %d, with i value: %d", index, temp_i);
-		           if (pthread_create( &threads[index], NULL, encrypt, (void *) &encrypt_go[temp_i] ))
-		            {
-		                fprintf(stderr, "Error creating thread \n");
-		                return 1;
-		            }
-		            else
-		            {
-		                //printf("I sent this through to the thread #%d: %x\n", index, encrypt_go[index].data_value);
-		            } 
-			}                                   
+        			if (temp_i < result)
+        			{ 
+        				//printf("I'm still not done the block, I'm creating a new thread overlapping at index: %d, with i value: %d", index, temp_i);
+        		           if (pthread_create( &threads[index], NULL, encrypt, (void *) &encrypt_go[temp_i] ))
+        		            {
+        		                fprintf(stderr, "Error creating thread \n");
+        		                return 1;
+        		            }
+        		            else
+        		            {
+        		                //printf("I sent this through to the thread #%d: %x\n", index, encrypt_go[index].data_value);
+        		            } 
+        			}                                   
                     
                 }
                 else
@@ -185,35 +199,6 @@ int main(int argc, char *argv[])
        //printf ("the entire string is what? %s\n", text);
     	printf("%s", text);
 
-/*
-	//shift the bits in the keyfile to the left by one after each block is processed
-	int loop;
-	printf("Old key file value: %s\n", buff);
-	int shift_left;
-	int shift_right;
-	long or;
-
-	int z = 0;
-	for (z = 0; z < 2; z++)
-	{
-	for (loop = 0; loop < strlen(buff); loop++)
-	{
-		printf("Old key file value at %d: %d and hex: %x\n", loop, buff[loop], buff[loop]);
-		shift_left = buff[loop] << 1;
-		printf("Old key file shift_left %d: %d and hex: %x\n", loop, shift_left, shift_left);
-		shift_right = buff[loop] >> sizeof(buff[loop]) * 8 - 1;
-		printf("Old key file shift_right %d: %d and hex: %x\n", loop, shift_right, shift_right);
-		or = shift_left | shift_right;
-		
-		//shift = (buff[loop] << 1) | (buff[loop] >> (sizeof(buff[loop]) * 8 - 1)) & (0x7F >> (sizeof(buff[loop])*8 - 1));
-		//y = (x << shift) | ( (x >> (sizeof(x)*CHAR_BIT - shift)) 
-		
-		buff[loop] = or;
-		printf("shifted key file value at %d: %d and hex: %x\n", loop, buff[loop], buff[loop]);
-	}
-}
-	printf("New key file value: %s\n", buff);
-*/
         result = fread(text, sizeof(char), blocksize, stdin);
         //printf("The next readin is %d\n", result);
     }
@@ -221,31 +206,26 @@ int main(int argc, char *argv[])
     //we've reached the end of the plaintext file
     //if there are any leftover data pieces (which will be smaller than block size)
     //finish them off so we can complete the process.
-    
-    if ( 0 < result && result < blocksize )
+
+    //so long as enough blocksize bytes are available, continue looping
+    while ( result > 0 )
     {
-        //so long as enough blocksize bytes are available, continue looping
-        while ( result > 0 )
-        {
-            ////printf("The leftover plaintext read in is: %s\n", text);
-            ////printf("the result of the read was: %d\n", result);
+        ////printf("The leftover plaintext read in is: %s\n", text);
+        ////printf("the result of the read was: %d\n", result);
 
-                //XOR the block read in with our keyfile provided, print to stdout
-                for(i=0; i < result; i++)
-                {
-                    text[i] ^= buff[i];
-                    //printf("The XOR result of block %d is %x\n", i, text[i]);
-                    //printf("%c\n", text[i]);
-                }
-                
-            printf ("%s", text);
-        
-            result = fread(text, sizeof(char), blocksize, stdin);
-            //printf("The next readin is %d\n", result);
-        }
- 
+            //XOR the block read in with our keyfile provided, print to stdout
+            for(i=0; i < result; i++)
+            {
+                text[i] ^= buff[i];
+                printf ("%c", text[i]);
+                //printf("The XOR result of block %d is %x\n", i, text[i]);
+                //printf("%c\n", text[i]);
+            }
+    
+        result = fread(text, sizeof(char), blocksize, stdin);
+        //printf("The next readin is %d\n", result);
     }
-
+ 
 
     free(source); /* Don't forget to call free() later! */
 
