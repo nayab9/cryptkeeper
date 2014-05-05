@@ -29,19 +29,28 @@ The key will repeat itself after every block is complete.
 Working example:
 
 >> hexdump -C keyfile
->> 01 02 03 04
+01 02 03 04
 
 >> hexdump -C datafile
->> 05 06 07 08 09 0a 0b 0c
+05 06 07 08 09 0a 0b 0c
 
 >> cat datafile | ./cryptkeeper -n 2 -k keyfile > encrypto_patronus
 
 >> hexdump -C encrypto_patronus
->> 04 04 04 04 08 08 08 08
+04 04 04 04 08 08 08 08
 
-T |     |     |     |     |
-
-Since 2 threads were requested, each block of 4 was split into 2 threads, each encrypting and returning a value.
+Since 2 threads were requested, each block of 4 must be processed twice using two threads, each encrypting and returning a value.
 Once the threads are complete, we move to the next block.
 
-Note that since the data provided can be very large, the utility will read by blocksize, process and continue.
+Block Start
+Thread1 = [ 01 xor 04 ]
+Thread2 = [ 02 xor 06 ]
+Join Thread 1 and Thread 2
+Thread1 = [ 03 xor 07 ]
+Thread2 = [ 04 xor 08 ]
+Join Thread 1 and Thread 2
+Block Complete
+
+continue..
+
+Note that since the data provided can be very large, the utility will read by blocksize, process and continue to the next block infinitely.
