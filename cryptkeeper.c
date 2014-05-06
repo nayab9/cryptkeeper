@@ -86,7 +86,7 @@ void *encrypt(void *thread_ptr)
  * ***************************************************/
 int main(int argc, char *argv[])
 {
-    char *keyfile;
+    char *keyfile = NULL;
     char *source = NULL;
     int num_threads = 0;
     int length = argc - 1;
@@ -139,6 +139,7 @@ int main(int argc, char *argv[])
             }
     
             size_t newLen = fread(source, sizeof(char), bufsize, fp);
+            
             if (newLen == 0) 
             {
                 fprintf(stderr, "Error opening keyfile, exiting.. \n");
@@ -149,6 +150,7 @@ int main(int argc, char *argv[])
                 source[++newLen] = '\0';
             }
         }
+        
         fclose(fp);
     }
     else
@@ -292,4 +294,6 @@ int main(int argc, char *argv[])
         
         result = fread(text, sizeof(char), blocksize, stdin);
     }
+    
+    free(source);
 }
