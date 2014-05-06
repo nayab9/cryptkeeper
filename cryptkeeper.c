@@ -36,15 +36,38 @@ int main(int argc, char *argv[])
 {
     //put a switch statement here for input paramaters, assign variables as needed.
     int num_threads = 0;
+    char *keyfile;
     
-    sscanf (argv[1], "%d", &num_threads);
+    char *key_switch = "-k";
+    char *thread_switch = "-n";
     
+    int length = argc - 1;
+    int loop;
     
+    //printf("Length is: %d\n", length);
+    
+    for (loop = 0; loop < length; loop++)
+    {
+        //printf("loop is: %d\n", loop);
+        
+        if (strcmp (argv[loop], key_switch) == 0)
+        {
+            //printf("Found a match for keyfile switch: %s\n", argv[loop+1]);
+            keyfile = argv[loop+1];
+        }
+        
+        if (strcmp (argv[loop], thread_switch) == 0)
+        {
+            //printf("Found a match for threads switch: %s\n", argv[loop+1]);
+            sscanf (argv[loop+1], "%d", &num_threads);
+        }
+
+    }
     
     //read from the key file specified
  
     char *source = NULL;
-    FILE *fp = fopen(argv[2], "r");
+    FILE *fp = fopen(keyfile, "r");
     if (fp != NULL) {
         /* Go to the end of the file. */
         if (fseek(fp, 0L, SEEK_END) == 0) {
@@ -67,6 +90,11 @@ int main(int argc, char *argv[])
             }
         }
         fclose(fp);
+    }
+    else
+    {
+        fprintf(stderr, "Error opening keyfile, exiting.. \n");
+        return 2;       
     }
 
     char *buff = source;
