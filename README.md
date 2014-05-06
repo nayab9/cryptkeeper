@@ -1,7 +1,7 @@
 ##Cryptkeeper
 
 This is an experimental utility to apply an XOR encryption scheme to data.
-Given input data and thread #'s to use via stdin, the utility will encrypt and output the data to stdout.
+Given any input data and thread numbers to use via stdin, the utility will encrypt and output the data to stdout.
 A keyfile and number of threads must be specified upon running the application.
 
 ###Usage:
@@ -59,6 +59,6 @@ Block Start
 
 Block Complete
 
-continue until blocks end.
+Continue until there are no more blocks to read in.
 
 Reversing the encrypted data back into the utility with the key will result in the original data.
