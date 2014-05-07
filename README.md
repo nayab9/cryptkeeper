@@ -22,6 +22,7 @@ Example usage:
 ###Debug Instructions:
 
 > gcc -Wall -g -O0 cryptkeeper.c -o cryptkeeper -lpthread
+
 > valgrind --tool=memcheck --track-origins=yes --leak-check=full ./cryptkeeper -n 2 -k key > encrypted
 
 > scan-build gcc cryptkeeper.c -o cryptkeeper -lpthread
