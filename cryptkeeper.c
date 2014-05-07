@@ -87,10 +87,14 @@ void *encrypt(void *thread_ptr)
 int main(int argc, char *argv[])
 {
     char *keyfile = NULL;
-    char *source = NULL;
-    int num_threads = 0;
+    char *source;
+    char *buff = "";
+    int blocksize = 1;
+    int num_threads = 1;
     int length = argc - 1;
     int loop, i, j;
+    long bufsize = -1;
+    size_t newLen = 0;
         
     //valid input parameters
     char *key_switch = "-k";
@@ -123,22 +127,36 @@ int main(int argc, char *argv[])
     {
         if (fseek(fp, 0L, SEEK_END) == 0) 
         {
-            long bufsize = ftell(fp);
+            bufsize = ftell(fp);
             if (bufsize == -1) 
             {
                 fprintf(stderr, "Error reading keyfile, exiting.. \n");
                 return 2;                    
             }
-    
-            source = (char *)malloc(sizeof(char) * (bufsize + 1));
+            else
+            {
+                //allocate the memory to store our key
+                source = (char *)malloc(sizeof(char) * (bufsize + 1));
+            }
     
             if (fseek(fp, 0L, SEEK_SET) != 0) 
             {
                 fprintf(stderr, "Error reading keyfile, exiting.. \n");
                 return 2;  
             }
-    
-            size_t newLen = fread(source, sizeof(char), bufsize, fp);
+            else
+            {
+                //read the actual key into memory
+                newLen = fread(source, sizeof(char), bufsize+1, fp);
+                
+                //assign a pointer to the keyfile
+                //this will be used from here on out for the encrypting
+                //simple obfuscation
+                buff = source;
+                
+                //retrive the blocksize based on the keyfile bytes
+                blocksize = strlen(buff)+1;
+            }
             
             if (newLen == 0) 
             {
@@ -147,11 +165,12 @@ int main(int argc, char *argv[])
             } 
             else 
             {
-                source[++newLen] = '\0';
+                source[newLen] = '\0';
             }
+    
+            fclose(fp);
+    
         }
-        
-        fclose(fp);
     }
     else
     {
@@ -159,13 +178,6 @@ int main(int argc, char *argv[])
         return 2;       
     }
 
-    //assign a pointer to the keyfile
-    //this will be used from here on out for encrypting
-    char *buff = source;
-
-    //retrive the blocksize based on the keyfile
-    int blocksize = strlen(buff);
-    
     //if threads specified is more than the blocksize
     //force threads to blocksize, since thats the max
     //number of threads we can utilize
@@ -177,9 +189,18 @@ int main(int argc, char *argv[])
     //this is where we store the XOR'd values to printout
     char text[blocksize];
 
+    /* Enable for valgrind debug purposes, no stdin data
+    FILE *pfile = fopen ("data", "rb");
+    if (pfile == NULL)
+    {
+        fputs("File error", stderr);
+        return 1;
+    }
+    */
+
     //read by bytes, since we can't rely on characters themselves (i.e Unicode vs ASCII)
     int result = fread(text, sizeof(char), blocksize, stdin);
-    
+
     //initialize the struct blocks and threads needed for processing
     block encrypt_go[blocksize];
     pthread_t threads[num_threads];
@@ -211,8 +232,8 @@ int main(int argc, char *argv[])
 
             //if we have less threads than the blocksize, we wrap up the thread
             //processing before processing the rest of the block
-            if ((temp_i >= num_threads && index == 0) ||
-                 blocksize == num_threads && num_threads == temp_i )
+            if ( (temp_i >= num_threads && index == 0) ||
+                 (blocksize == num_threads && num_threads == temp_i) )
             {
                 //for each thread spawned, we will attempt to join them together
                 for (j = 0; j < num_threads; j++)
@@ -296,4 +317,6 @@ int main(int argc, char *argv[])
     }
     
     free(source);
+
+    return 0;
 }
