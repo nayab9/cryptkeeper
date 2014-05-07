@@ -189,15 +189,6 @@ int main(int argc, char *argv[])
     //this is where we store the XOR'd values to printout
     char text[blocksize];
 
-    /* Enable for valgrind debug purposes, no stdin data
-    FILE *pfile = fopen ("data", "rb");
-    if (pfile == NULL)
-    {
-        fputs("File error", stderr);
-        return 1;
-    }
-    */
-
     //read by bytes, since we can't rely on characters themselves (i.e Unicode vs ASCII)
     int result = fread(text, sizeof(char), blocksize, stdin);
 
@@ -249,8 +240,10 @@ int main(int argc, char *argv[])
                         block *return_block = (block *) returnValue;
                         int encrypted_value = (int) return_block->encrypted_value;
                         int returned_thread = (int) return_block->thread_id;
-
                         text[returned_thread] = encrypted_value;
+             
+                        //encryption processing complete on byte, print to stdout
+                        printf ("%c", text[returned_thread]);
                     }
                 }
                 //if our block size is larger than number of threads
@@ -274,12 +267,8 @@ int main(int argc, char *argv[])
                     return 1;
                 }
             }
-
         }
-            
-        //block processing complete, print to stdout
-    	printf("%s", text);
-    	
+
     	//read the next available block (bytes of blocksize)
         result = fread(text, sizeof(char), blocksize, stdin);
         
