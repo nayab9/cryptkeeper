@@ -1,4 +1,4 @@
-##Cryptkeeper
+##Cryptkeeper Version 1
 
 This is an experimental utility to apply an XOR encryption scheme to data.
 Given any input data and thread numbers to use via stdin, the utility will encrypt and output the data to stdout.
